@@ -35,7 +35,7 @@ distance_sampling/
 │   │   └── ...
 │   ├── animal_dist_imgs/     # Still images for animal distance estimation
 │   ├── Animal_Distances.xlsx # Ground-truth animal distances
-│   ├── ideal_calibration_results.json # Precomputed per-site scale and shift from a hand-selected "ideal" frame where all reference points are visible; used as a fallback when fewer than two reference points are   │   │                                    visible in a frame
+│   ├── ideal_calibration_results.json # Precomputed per-site scale and shift from a hand-selected "ideal" frame where all reference points are visible; used as a fallback when fewer than two reference points are visible in a frame
 │   └── reference_point_distance.json  # Ground-truth distances for annotated reference points used in calibration
 │
 ├── outputs/
