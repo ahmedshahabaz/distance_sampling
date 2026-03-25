@@ -263,6 +263,4 @@ This research was supported in part by the US National Science Foundation grant 
 
 ## License
 
-This project is released under the MIT License. See `LICENSE`.
-
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
