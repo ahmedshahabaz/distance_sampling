@@ -251,13 +251,13 @@ If you use this code, please cite:
 
 ## Data Availability
 
-Due to ongoing ecological research projects and conservation considerations, the full camera-trap video dataset cannot be made publicly available. A small subset of example videos used to demonstrate the pipeline is provided in this repository. Additional data may be made available from the authors upon reasonable request.
+Due to ongoing ecological research projects and conservation considerations, the full camera-trap video dataset cannot be made publicly available. A small subset of example videos used to demonstrate the pipeline is provided in this repository. Additional data may be made available from the authors upon request.
 
 ---
 
 ## Acknowledgements
 
-This research was supported in part by the US National Science Foundation grant IIS 1956050. The field research was funded by SAVE – Wildlife Conservation Fund.
+This research was supported in part by the US National Science Foundation grant IIS 1956050. The field research was funded by SAVE – Wildlife Conservation Fund, Poland.
 
 ---
 
