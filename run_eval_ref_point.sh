@@ -3,35 +3,35 @@ source ~/anaconda3/etc/profile.d/conda.sh
 
 
 conda activate test
-#echo "*** DEPTH ANYTHING ***"
-#python3 eval_ref_point_distances.py DA --relative
-#echo "------------------"
-#python3 eval_ref_point_distances.py DA --metric
-#echo "------------------"
-#python3 eval_ref_point_distances.py DA --metric --calb
-#echo "------------------"
-#conda deactivate
-#echo "------------------"
+echo "*** DEPTH ANYTHING ***"
+python3 eval_ref_point_distances.py DA --relative
+echo "------------------"
+python3 eval_ref_point_distances.py DA --metric
+echo "------------------"
+python3 eval_ref_point_distances.py DA --metric --calb
+echo "------------------"
+conda deactivate
+echo "------------------"
 
-#conda activate midas
+conda activate midas
 
-#echo "*** MIDAS ***"
-#python3 eval_ref_point_distances.py MD --relative
-#echo "------------------"
+echo "*** MIDAS ***"
+python3 eval_ref_point_distances.py MD --relative
+echo "------------------"
 
-#echo "*** ADABINS ***"
-#python3 eval_ref_point_distances.py AB --metric
-#echo "------------------"
-#python3 eval_ref_point_distances.py AB --metric --calb
-#echo "------------------"
+echo "*** ADABINS ***"
+python3 eval_ref_point_distances.py AB --metric
+echo "------------------"
+python3 eval_ref_point_distances.py AB --metric --calb
+echo "------------------"
 
-#conda deactivate
+conda deactivate
 
 
 conda activate test
 echo "*** UNIK3D ***"
-#python3 eval_ref_point_distances.py UN --metric
-#echo "------------------"
+python3 eval_ref_point_distances.py UN --metric
+echo "------------------"
 python3 eval_ref_point_distances.py UN --metric --calb
 echo "------------------"
 
