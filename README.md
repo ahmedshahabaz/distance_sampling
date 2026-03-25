@@ -2,8 +2,7 @@
 
 Code for the paper:
 
-> **[Monocular Depth Estimation for Wildlife Distance Sampling](#)**  
-> *(preprint: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5537631 — accepted version link to be added)*
+> [**From Relative to Metric: Calibrating AI-based Monocular Depth Learning Models for Distance Sampling in Wildlife Monitoring Applications**](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5537631)
 
 This repository evaluates monocular depth estimation models for estimating animal distances in camera-trap videos, using a distance-sampling field protocol as ground truth. The pipeline covers depth prediction, calibration, reference-point evaluation, animal distance estimation, and statistical reporting.
 
