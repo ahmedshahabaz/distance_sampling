@@ -12,3 +12,18 @@ dist/
 build/
 *.log
 .DS_Store
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local assistant files
+.claude/
+
+# Model weights
+*.pt
+*.pth
+
+# Common local clutter
+.ipynb_checkpoints/
+.DS_Store
