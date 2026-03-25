@@ -1,0 +1,35 @@
+name: test
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pytorch=2.2.2
+  - torchvision=0.17.2
+  - torchaudio=2.2.2
+  - pytorch-cuda=12.1
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pillow
+  - tqdm
+  - openpyxl
+  - pip:
+      - transformers==4.45.0
+      - huggingface-hub
+      - timm==0.9.12
+      - einops==0.8.0
+      - xformers==0.0.25.post1
+      - opencv-python==4.10.0.84
+      - ultralytics==8.3.61
+      - pytorchwildlife==1.2.4.2
+      - supervision==0.23.0
+      - scikit-posthocs==0.11.4
+      - seaborn==0.13.2
+      - statsmodels==0.14.1
+      - pycocotools==2.0.7
+      - torchsparse==1.2.0

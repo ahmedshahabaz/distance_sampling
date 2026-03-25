@@ -1,0 +1,20 @@
+name: midas
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pytorch=1.13.0
+  - torchvision=0.14.0
+  - pytorch-cuda=11.7
+  - numpy=1.23.4
+  - scipy
+  - pillow
+  - tqdm
+  - matplotlib
+  - pip:
+      - opencv-python==4.6.0.66
+      - timm==0.6.12
+      - transformers==4.45.0
