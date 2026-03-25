@@ -239,7 +239,11 @@ conda env create -f environment_midas.yml  # midas — MiDaS, ZoeDepth, AdaBins
 If you use this code, please cite:
 
 ```
-@article{...}
+@article{shahabaz5537631relative,
+  title={From Relative to Metric: Calibrating AI-based Monocular Depth Learning Models for Distance Sampling in Wildlife Monitoring Applications},
+  author={Shahabaz, Ahmed and Toczyd{\l}owska, Joanna and Gula, Roman and Theuerkauf, J{\"o}rn and Sarkar, Sudeep},
+  journal={Available at SSRN 5537631}
+}
 ```
 *(BibTeX to be updated with the accepted paper details.)*
 
