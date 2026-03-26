@@ -3,17 +3,15 @@ plot_ref_pts_depth_preds.py – Annotate videos with predicted distances and gen
 
 Usage
 -----
-    python plot_ref_pts_depth_preds.py <model> --relative | --metric [--calb] [--save-videos]
+    python plot_ref_pts_depth_preds.py [--save-videos]
 
-    model         : DA | MD | ZD | UD | UN | AB
-    --relative    : use relative depth (calibration always applied)
-    --metric      : use metric depth
-    --calb        : apply disparity calibration (metric depth only)
+This script is fixed to the `DA` model with relative depth (`DA_rltv`).
     --save-videos / --save-vids : write annotated frames as .mp4 videos;
                     by default only variance / VMR plots are saved
 
 For each video the script:
-  1. Loads pre-computed depth predictions (.npy) and animal bounding boxes.
+  1. Loads pre-computed depth predictions (.npy) when available; otherwise
+     runs depth inference on the fly, and loads animal bounding boxes.
   2. For every frame, fits a per-frame disparity calibration against the
      circle-patch GT distances, then converts disparity → metric depth.
   3. Annotates animals with their predicted distance on each frame.
@@ -61,8 +59,6 @@ from utils.script_utils import (
     DEFAULT_ROOT_DIR,
     add_dataset_path_args,
     print_run_banner,
-    validate_model_depth_type,
-    VALID_MODELS,
 )
 
 
@@ -92,36 +88,12 @@ def main():
     # ── CLI parsing ───────────────────────────────────────────────────────────
     _ds_root = "./outputs/"
     parser = argparse.ArgumentParser(
-        description="Annotate videos with predicted distances and generate variance plots."
+        description=(
+            "Annotate videos with predicted distances and generate variance plots "
+            "for the fixed DA relative-depth workflow."
+        )
     )
 
-    # model is optional – defaults to DA (the primary model for this workflow)
-    parser.add_argument(
-        "model",
-        nargs="?",
-        choices=VALID_MODELS,
-        default="DA",
-        help="Model shortcode (default: DA).",
-    )
-    # depth type is optional – defaults to --relative
-    depth_type = parser.add_mutually_exclusive_group(required=False)
-    depth_type.add_argument(
-        "--relative", "--rltv",
-        action="store_true",
-        dest="relative",
-        help="Use relative depth (default).",
-    )
-    depth_type.add_argument(
-        "--metric",
-        action="store_true",
-        dest="metric",
-        help="Use metric depth.",
-    )
-    parser.add_argument(
-        "--calb",
-        action="store_true",
-        help="Apply disparity calibration (metric depth only; always on for relative depth).",
-    )
     parser.add_argument(
         "--root-dir",
         default=DEFAULT_ROOT_DIR,
@@ -155,14 +127,9 @@ def main():
     )
     args = parser.parse_args()
 
-    # Apply depth-type default: if neither flag given, use --relative
-    if not args.relative and not args.metric:
-        args.relative = True
-
-    model_name     = args.model
-    use_relative   = args.relative
-    use_calb       = True if use_relative else args.calb
-    validate_model_depth_type(parser, model_name, use_relative)
+    model_name     = "DA"
+    use_relative   = True
+    use_calb       = True
     save_videos    = args.save_videos
     data_dir       = args.data_dir
     mask_dir       = args.mask_dir
@@ -205,11 +172,6 @@ def main():
     # ── Main loop: site → video → frame ───────────────────────────────────────
     for site_idx, site in enumerate(SITES):
         depth_dir = os.path.join(pred_dir, site)
-
-        _, site_mean_pred_norm, _ = load_site_mean_pred(site, pred_dir)
-        if site_mean_pred_norm is None:
-            site_mean_dir = os.path.join(pred_dir, "_SITE_MEANS_", "_means_")
-            print(f"[WARN] No site mean found for {site} in {site_mean_dir}")
 
         site_ref_pts = ref_pts_data[site]
         camera_dir = os.path.join(data_dir, site)
@@ -284,6 +246,7 @@ def main():
 
                 if all_frame_preds is not None:
                     # Resize stored depth to the cropped frame resolution.
+                    print("found pre-computed depth predictions; resizing to frame dimensions...")
                     raw_pred  = all_frame_preds[frame_idx]
                     pred      = cv2.resize(raw_pred, (frame_width, cropped_height), interpolation=cv2.INTER_LINEAR)
                 else:

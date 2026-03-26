@@ -1,5 +1,6 @@
 """
-eval_ref_point_distances.py – Evaluate reference-point depth predictions across all sites.
+eval_ref_point_distances.py – Evaluate reference-point depth predictions across all sites
+and save the aggregated results to a JSON file.
 
 Usage
 -----
@@ -24,6 +25,21 @@ Output
     JSON file written to the model's prediction directory:
         ref_point_stats.json      (uncalibrated run)
         ref_point_stats_calb.json (calibrated run)
+
+    The JSON is organised as:
+        site -> video index -> {
+            "file_name": ...,
+            "circles": [...]
+        }
+
+    Each entry in "circles" corresponds to one reference-point circle and stores:
+        - the reference-point ID and GT distance
+        - the projected GT depth used for evaluation ("Z")
+        - median prediction summaries (raw disparity / normalised disparity /
+          calibrated depth variants)
+        - an "errors" dict with evaluation metrics for each calibration method
+          ("fxd", "mean", "median", "all", "outliers_rmv"), including
+          diff_err, abs_err, abs_rel, sq_rel, rmse, delta1, delta2, and delta3
 """
 
 import argparse
@@ -81,13 +97,14 @@ FOCAL_LENGTH      = 2955 # Camera focal length (pixels)
 
 # ── Sites to process ──────────────────────────────────────────────────────────
 
-SITES = [
-    "31KL", "33KL", "33LD", "36KL", "37KL", "37PS", "38LD", "39LD",
-    "40KL", "40PS", "41KL", "41PS", "44KL", "46PS", "48KL", "48PS",
-    "49PS", "55LS", "55PS", "57LS", "57PS", "59PS", "62LN", "62PS",
-    "63LN", "71LN", "80PS", "85LN",
-]
+# SITES = [
+#     "31KL", "33KL", "33LD", "36KL", "37KL", "37PS", "38LD", "39LD",
+#     "40KL", "40PS", "41KL", "41PS", "44KL", "46PS", "48KL", "48PS",
+#     "49PS", "55LS", "55PS", "57LS", "57PS", "59PS", "62LN", "62PS",
+#     "63LN", "71LN", "80PS", "85LN",
+# ]
 
+SITES = ['31KL', '33LD', '38LD', '40PS', '48PS', '55PS', '57PS', '63LN']
 
 def _init_frame_stats(num_patches):
     """
@@ -210,7 +227,7 @@ def main():
 
         for vid_idx, (vid_file, depth_file) in enumerate(paired_files):
             vid_file_name = os.path.basename(vid_file)
-            vid_stats[site][vid_idx] = {"file_name": vid_file_name, "lines": []}
+            vid_stats[site][vid_idx] = {"file_name": vid_file_name, "circles": []}
 
             try:
                 with open(os.path.join(animal_box_dir, site,
@@ -225,148 +242,142 @@ def main():
             frame_stats       = _init_frame_stats(len(site_ref_pts))
             mask_dir_path     = os.path.join(mask_dir, site, vid_file_name[:-4])
 
-            # Use catch_warnings so the "error" filter is scoped to this video
-            # and does not accumulate in the global warning filter list.
-            with warnings.catch_warnings():
-                warnings.filterwarnings("error")
-                warnings.filterwarnings("ignore", category=ResourceWarning)
+            for frame_idx in range(total_frame_count):
+                frame = read_frame_safe(raw_video, site, vid_file_name, frame_idx)
+                if frame is None:
+                    break
 
-                for frame_idx in range(total_frame_count):
-                    frame = read_frame_safe(raw_video, site, vid_file_name, frame_idx)
-                    if frame is None:
-                        break
+                cropped_bgr = (frame[:-CROP_BOTTOM, :, :]if frame.shape[0] > CROP_BOTTOM else frame)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                cropped_frame = (frame[:-CROP_BOTTOM, :, :]if frame.shape[0] > CROP_BOTTOM else frame)
 
-                    cropped_bgr = (frame[:-CROP_BOTTOM, :, :]if frame.shape[0] > CROP_BOTTOM else frame)
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    cropped_frame = (frame[:-CROP_BOTTOM, :, :]if frame.shape[0] > CROP_BOTTOM else frame)
+                if all_frame_preds is not None:
+                    # Resize the stored depth prediction to the cropped frame size.
+                    raw_pred   = all_frame_preds[frame_idx]
+                    raw_pred_t = torch.from_numpy(raw_pred).unsqueeze(0)
+                    pred = F.interpolate(
+                        raw_pred_t[:, None],
+                        (cropped_height, BASE_FRAME_WIDTH),
+                        mode="bilinear",
+                        align_corners=True,
+                    )[0, 0].numpy()
+                else:
+                    pred = get_depth(cropped_bgr, depth_model, device, depth_args, depth_transform)
+                pred_norm = normalize_depth_map(pred)
 
-                    if all_frame_preds is not None:
-                        # Resize the stored depth prediction to the cropped frame size.
-                        raw_pred   = all_frame_preds[frame_idx]
-                        raw_pred_t = torch.from_numpy(raw_pred).unsqueeze(0)
-                        pred = F.interpolate(
-                            raw_pred_t[:, None],
-                            (cropped_height, BASE_FRAME_WIDTH),
-                            mode="bilinear",
-                            align_corners=True,
-                        )[0, 0].numpy()
-                    else:
-                        pred = get_depth(cropped_bgr, depth_model, device, depth_args, depth_transform)
-                    pred_norm = normalize_depth_map(pred)
+                # Load or generate the animal segmentation mask for this frame.
+                frame_key  = f"frame_{frame_idx:06d}"
+                if animal_bboxes is not None:
+                    animal_bboxes_frame = animal_bboxes.get(frame_key, [])
+                else:
+                    if _detection_model is None:
+                        _detection_model = init_detection_model(device)
+                    animal_bboxes_frame = detect_animals(_detection_model, cropped_frame)
+                animal_mask_frame   = load_animal_mask(
+                    frame_key, mask_dir_path, cropped_frame,
+                    animal_bboxes_frame, mask_loader_fn=get_combined_sam_mask,
+                )
 
-                    # Load or generate the animal segmentation mask for this frame.
-                    frame_key  = f"frame_{frame_idx:06d}"
-                    if animal_bboxes is not None:
-                        animal_bboxes_frame = animal_bboxes.get(frame_key, [])
-                    else:
-                        if _detection_model is None:
-                            _detection_model = init_detection_model(device)
-                        animal_bboxes_frame = detect_animals(_detection_model, cropped_frame)
-                    animal_mask_frame   = load_animal_mask(
-                        frame_key, mask_dir_path, cropped_frame,
-                        animal_bboxes_frame, mask_loader_fn=get_combined_sam_mask,
-                    )
-
-                    # Align this frame's background disparity to the site mean
-                    # (DA model only) to correct for per-frame exposure shifts.
-                    if (model_name == "DA"
-                            and use_background_fit
-                            and site_mean_pred_norm is not None):
-                        with warnings.catch_warnings():
-                            warnings.filterwarnings("ignore", category=RuntimeWarning)
-                            pred_norm, _, _ = fit_background_to_site_mean(
-                                pred_norm, animal_bboxes_frame, animal_mask_frame,
-                                patch_mask_site, frame_shape, site_mean_pred_norm,
-                                method=background_fit_method,
-                            )
-
-                    # ── Gather training points from all calibration circles ────
-                    # We pool predictions and GT depths across all visible circles
-                    # in this frame to fit a single per-frame (scale, shift).
-                    gt_depths_mean,   gt_depths_median   = [], []
-                    gt_depths_all,    gt_depths_no_outliers = [], []
-                    pred_disps_mean, pred_disps_median = [], []
-                    pred_disps_all,  pred_disps_no_outliers = [], []
-
-                    # Store each patch's test points so we can evaluate them
-                    # after fitting the per-frame calibration.
-                    patch_test_points = {i: [] for i in range(len(site_ref_pts))}
-
-                    for ref_pts_idx, ref_point in enumerate(site_ref_pts):
-                        x, y, r, distance, unoccluded_pts = get_circle_info(
-                            ref_point, animal_bboxes_frame,
-                            scale_x, scale_y, scale_r,
-                            frame_shape, animal_mask_frame,
+                # Align this frame's background disparity to the site mean
+                # (DA model only) to correct for per-frame exposure shifts.
+                if (model_name == "DA"
+                        and use_background_fit
+                        and site_mean_pred_norm is not None):
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=RuntimeWarning)
+                        pred_norm, _, _ = fit_background_to_site_mean(
+                            pred_norm, animal_bboxes_frame, animal_mask_frame,
+                            patch_mask_site, frame_shape, site_mean_pred_norm,
+                            method=background_fit_method,
                         )
 
-                        # Skip circles that go out of frame or are fully occluded.
-                        if (x - r < 0 or y - r < 0
-                                or x + r >= BASE_FRAME_WIDTH
-                                or y + r >= cropped_height):
-                            continue
-                        if not unoccluded_pts:
-                            continue
+                # ── Gather training points from all calibration circles ────
+                # We pool predictions and GT depths across all visible circles
+                # in this frame to fit a single per-frame (scale, shift).
+                gt_depths_mean,   gt_depths_median   = [], []
+                gt_depths_all,    gt_depths_no_outliers = [], []
+                pred_disps_mean, pred_disps_median = [], []
+                pred_disps_all,  pred_disps_no_outliers = [], []
 
-                        train_pts, test_pts = split_train_test(unoccluded_pts)
-                        patch_test_points[ref_pts_idx] = test_pts
+                # Store each patch's test points so we can evaluate them
+                # after fitting the per-frame calibration.
+                patch_test_points = {i: [] for i in range(len(site_ref_pts))}
 
-                        pred_train = get_depth_on_circle(pred_norm, train_pts)
-                        zs_train   = projected_depth_from_distance(
-                            distance, train_pts, u_map, v_map, FOCAL_LENGTH,)
+                for ref_pts_idx, ref_point in enumerate(site_ref_pts):
+                    x, y, r, distance, unoccluded_pts = get_circle_info(
+                        ref_point, animal_bboxes_frame,
+                        scale_x, scale_y, scale_r,
+                        frame_shape, animal_mask_frame,
+                    )
 
-                        update_patch_stats(
-                            pred_train, zs_train,
-                            gt_depths_mean,  gt_depths_median,
-                            gt_depths_all,   gt_depths_no_outliers,
-                            pred_disps_mean, pred_disps_median,
-                            pred_disps_all,  pred_disps_no_outliers,)
+                    # Skip circles that go out of frame or are fully occluded.
+                    if (x - r < 0 or y - r < 0
+                            or x + r >= BASE_FRAME_WIDTH
+                            or y + r >= cropped_height):
+                        continue
+                    if not unoccluded_pts:
+                        continue
 
-                    if not pred_disps_mean:
-                        continue  # No visible calibration circles this frame.
+                    train_pts, test_pts = split_train_test(unoccluded_pts)
+                    patch_test_points[ref_pts_idx] = test_pts
 
-                    # ── Fit per-frame disparity calibration ───────────────────
-                    # We fit four variants that differ in which training points
-                    # are pooled (mean/median summary vs all vs outlier-filtered).
-                    calib_params = {
-                        "fxd": (4.0, 25.0),   # fixed fallback (not data-driven)
-                        "mean": align_disparity_scale_shift(
-                            np.array(pred_disps_mean),
-                            np.array(gt_depths_mean),
-                        ),
-                        "median": align_disparity_scale_shift(
-                            np.array(pred_disps_median),
-                            np.array(gt_depths_median),
-                        ),
-                        "all": align_disparity_scale_shift(
-                            np.array(pred_disps_all),
-                            np.array(gt_depths_all),
-                        ),
-                        "outliers_rmv": align_disparity_scale_shift(
-                            np.array(pred_disps_no_outliers),
-                            np.array(gt_depths_no_outliers),
-                        ),
-                    }
+                    pred_train = get_depth_on_circle(pred_norm, train_pts)
+                    zs_train   = projected_depth_from_distance(
+                        distance, train_pts, u_map, v_map, FOCAL_LENGTH,)
 
-                    # ── Evaluate held-out test points for each patch ───────────
-                    for ref_pts_idx, ref_point in enumerate(site_ref_pts):
-                        x        = int(ref_point["x"] * scale_x)
-                        y        = int(ref_point["y"] * scale_y)
-                        distance = ref_point["distance"]
+                    update_patch_stats(
+                        pred_train, zs_train,
+                        gt_depths_mean,  gt_depths_median,
+                        gt_depths_all,   gt_depths_no_outliers,
+                        pred_disps_mean, pred_disps_median,
+                        pred_disps_all,  pred_disps_no_outliers,)
 
-                        if not (0 <= x < BASE_FRAME_WIDTH and 0 <= y < cropped_height):
-                            continue
+                if not pred_disps_mean:
+                    continue  # No visible calibration circles this frame.
 
-                        test_pts = patch_test_points[ref_pts_idx]
-                        if not test_pts:
-                            continue
+                # ── Fit per-frame disparity calibration ───────────────────
+                # We fit four variants that differ in which training points
+                # are pooled (mean/median summary vs all vs outlier-filtered).
+                calib_params = {
+                    "fxd": (4.0, 25.0),   # fixed fallback (not data-driven)
+                    "mean": align_disparity_scale_shift(
+                        np.array(pred_disps_mean),
+                        np.array(gt_depths_mean),
+                    ),
+                    "median": align_disparity_scale_shift(
+                        np.array(pred_disps_median),
+                        np.array(gt_depths_median),
+                    ),
+                    "all": align_disparity_scale_shift(
+                        np.array(pred_disps_all),
+                        np.array(gt_depths_all),
+                    ),
+                    "outliers_rmv": align_disparity_scale_shift(
+                        np.array(pred_disps_no_outliers),
+                        np.array(gt_depths_no_outliers),
+                    ),
+                }
 
-                        pred_test_norm = get_depth_on_circle(pred_norm, test_pts)
-                        pred_test      = get_depth_on_circle(pred, test_pts)
-                        zs_test        = projected_depth_from_distance(
-                            distance, test_pts, u_map, v_map, FOCAL_LENGTH,)
+                # ── Evaluate held-out test points for each patch ───────────
+                for ref_pts_idx, ref_point in enumerate(site_ref_pts):
+                    x        = int(ref_point["x"] * scale_x)
+                    y        = int(ref_point["y"] * scale_y)
+                    distance = ref_point["distance"]
 
-                        update_test_stats(frame_stats, ref_pts_idx,pred_test, pred_test_norm,
-                            distance, zs_test,calib_params, use_relative, use_calb,)
+                    if not (0 <= x < BASE_FRAME_WIDTH and 0 <= y < cropped_height):
+                        continue
+
+                    test_pts = patch_test_points[ref_pts_idx]
+                    if not test_pts:
+                        continue
+
+                    pred_test_norm = get_depth_on_circle(pred_norm, test_pts)
+                    pred_test      = get_depth_on_circle(pred, test_pts)
+                    zs_test        = projected_depth_from_distance(
+                        distance, test_pts, u_map, v_map, FOCAL_LENGTH,)
+
+                    update_test_stats(frame_stats, ref_pts_idx,pred_test, pred_test_norm,
+                        distance, zs_test,calib_params, use_relative, use_calb,)
 
                 # Summarise this video's frame-level stats.
                 update_vid_stats(vid_stats, site, vid_idx, frame_stats)

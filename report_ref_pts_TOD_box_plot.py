@@ -13,7 +13,7 @@ from scipy.stats import f_oneway, kruskal, levene, shapiro
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 from utils.pipeline_utils import resolve_pred_dir
-from utils.script_utils import parse_depth_cli, print_run_banner
+from utils.script_utils import get_ref_point_circles, parse_depth_cli, print_run_banner
 
 FONT_SIZE = 15
 TOD_ORDER = ["DAWN", "DAY", "DUSK", "NIGHT"]
@@ -71,9 +71,9 @@ for cam_id, videos in json_data.items():
         if tod is None:
             continue  # skip if no TOD info
 
-        for line in vid_info['lines']:
-            GT_distance =  line.get("GT", {})
-            err_val = line.get("errors", {}).get(point_select, {}).get(metric, None)
+        for circle in get_ref_point_circles(vid_info):
+            GT_distance =  circle.get("GT", {})
+            err_val = circle.get("errors", {}).get(point_select, {}).get(metric, None)
             if err_val is not None and err_val != -1:
                 box_plot_data.append({
                     'site': cam_id,
@@ -111,8 +111,8 @@ for m in error_metrics:
             tod = video_to_TOD.get(base_name)
             if tod is None:
                 continue
-            for line in vid_info['lines']:
-                val = line.get("errors", {}).get(point_select, {}).get(m, None)
+            for circle in get_ref_point_circles(vid_info):
+                val = circle.get("errors", {}).get(point_select, {}).get(m, None)
                 if val is not None and val != -1:
                     metric_data.append({'tod': tod, 'metric': m, 'video': base_name, 'value': val})
     df = pd.DataFrame(metric_data)

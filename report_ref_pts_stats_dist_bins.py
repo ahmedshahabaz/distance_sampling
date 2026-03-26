@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from utils.pipeline_utils import resolve_pred_dir
-from utils.script_utils import parse_depth_cli, print_run_banner
+from utils.script_utils import get_ref_point_circles, parse_depth_cli, print_run_banner
 
 model_name, use_relative, use_calb, root_dir, _ = parse_depth_cli(
     "Print per-distance-bin error summary from eval_ref_point_distances output."
@@ -40,16 +40,16 @@ print()
 filtered_data = []
 for camera_type, video in data.items():
     for vid_id, vid_data in video.items():
-        for line in vid_data["lines"]:
-            if pred_point_sample in line["errors"]:
-                gt_depth = line["GT"]
-                pred_depth = line[f"calb_depth_{pred_point_sample}"]
-                #diff_error = line["errors"][pred_point_sample]["diff_err"]
-                abs_error = line["errors"][pred_point_sample]["abs_err"]
-                abs_rel_error = line["errors"][pred_point_sample]["abs_rel"] #* 100  # Convert to percentage
-                sq_rel_error = line["errors"][pred_point_sample]["sq_rel"] #* 100  # Convert to percentage
-                rmse_error = line["errors"][pred_point_sample]["rmse"]
-                delta1_acc = line["errors"][pred_point_sample]["delta1"]
+        for circle in get_ref_point_circles(vid_data):
+            if pred_point_sample in circle["errors"]:
+                gt_depth = circle["GT"]
+                pred_depth = circle[f"calb_depth_{pred_point_sample}"]
+                #diff_error = circle["errors"][pred_point_sample]["diff_err"]
+                abs_error = circle["errors"][pred_point_sample]["abs_err"]
+                abs_rel_error = circle["errors"][pred_point_sample]["abs_rel"] #* 100  # Convert to percentage
+                sq_rel_error = circle["errors"][pred_point_sample]["sq_rel"] #* 100  # Convert to percentage
+                rmse_error = circle["errors"][pred_point_sample]["rmse"]
+                delta1_acc = circle["errors"][pred_point_sample]["delta1"]
 
                 filtered_data.append({
                     "GT Depth": gt_depth,

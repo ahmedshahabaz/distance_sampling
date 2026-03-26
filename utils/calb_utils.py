@@ -455,11 +455,11 @@ def update_vid_stats(vid_stats, site, vid_idx, frame_stats):
     Summarise per-patch frame_stats into vid_stats after processing all frames.
 
     For each calibration circle, computes error metrics for every calibration
-    method and appends an entry to vid_stats[site][vid_idx]['lines'].
+    method and appends an entry to vid_stats[site][vid_idx]['circles'].
 
     Parameters
     ----------
-    vid_stats   : dict  – top-level output accumulator (site → video → lines)
+    vid_stats   : dict  – top-level output accumulator (site → video → circles)
     site        : str   – site identifier
     vid_idx     : int   – video index within the site
     frame_stats : dict  – per-patch per-frame accumulator (patch_idx → data)
@@ -496,8 +496,8 @@ def update_vid_stats(vid_stats, site, vid_idx, frame_stats):
         if not errors:
             continue
 
-        vid_stats[site][vid_idx]["lines"].append({
-            "line_id":              str(patch_idx),
+        vid_stats[site][vid_idx]["circles"].append({
+            "circle_id":            str(patch_idx),
             "GT":                   gt,
             "Z":                    gt_depth,
             "pred_disp":            safe_median(patch_data['pred_disp']),

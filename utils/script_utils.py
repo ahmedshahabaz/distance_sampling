@@ -184,3 +184,9 @@ def convert_numpy_types(obj):
     if isinstance(obj, (np.float32, np.float64, np.int32, np.int64)):
         return obj.item()
     return obj
+
+
+def get_ref_point_circles(video_data):
+    """Return reference-point entries from a video record."""
+    # Backward compatibility: older JSON outputs stored circles under "lines".
+    return video_data.get("circles", video_data.get("lines", []))

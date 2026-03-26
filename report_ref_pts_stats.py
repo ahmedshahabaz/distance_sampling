@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from utils.pipeline_utils import resolve_pred_dir
-from utils.script_utils import parse_depth_cli, print_run_banner
+from utils.script_utils import get_ref_point_circles, parse_depth_cli, print_run_banner
 
 model_name, use_relative, use_calb, root_dir, _ = parse_depth_cli(
     "Print filtered/unfiltered distance error summary from eval_ref_point_distances output."
@@ -41,12 +41,12 @@ summary_data_unfiltered = []
 
 for camera_type, video in data.items():
     for vid_id, vid_data in video.items():
-        for line in vid_data["lines"]:
-            gt_depth = line["GT"]
+        for circle in get_ref_point_circles(vid_data):
+            gt_depth = circle["GT"]
             for p_slct in point_selects:
-                if p_slct in line["errors"]:
+                if p_slct in circle["errors"]:
                     for metric in error_metrics:
-                        err_val = line["errors"][p_slct][metric]
+                        err_val = circle["errors"][p_slct][metric]
                         if err_val == -1:
                             continue
                         if metric not in not_percent:

@@ -108,7 +108,7 @@ python generate_animal_masks.py
 
 ### Step 2 — Evaluate Reference-Point Distances
 
-For each video, fits a per-frame disparity calibration (scale + shift) against ground-truth distances at known reference-point circles, then evaluates depth accuracy.
+For each video, this script fits a per-frame disparity calibration (scale + shift) against ground-truth distances at known reference-point circles, evaluates depth accuracy, and saves the aggregated statistics to a JSON file.
 
 ```bash
 python eval_ref_point_distances.py <model> --relative | --metric [--calb]
@@ -125,6 +125,8 @@ python eval_ref_point_distances.py <model> --relative | --metric [--calb]
 Output JSON written to the model's prediction directory:
 - `ref_point_stats.json` — uncalibrated
 - `ref_point_stats_calb.json` — calibrated
+
+The JSON is organised by site and video. Each video entry contains a `file_name` and a `circles` list, where each item corresponds to one reference-point circle and stores the GT distance, projected GT depth, median prediction summaries, and per-calibration error metrics (`diff_err`, `abs_err`, `abs_rel`, `sq_rel`, `rmse`, `delta1`, `delta2`, `delta3`).
 
 Run all model/mode combinations:
 ```bash
@@ -168,8 +170,12 @@ This script also prints per-time-of-day summary statistics to the terminal. A se
 
 **Annotated video output and variance/VMR plots:**
 ```bash
-python plot_ref_pts_depth_preds.py <model> --relative | --metric [--calb] [--save-videos]
+python plot_ref_pts_depth_preds.py [--save-videos]
 ```
+This script is fixed to the Depth Anything V2 relative-depth workflow (`DA_rltv`) and does not take model, metric, or calibration CLI options.
+
+`--save-videos` writes annotated `.mp4` videos with the estimated animal distances drawn on each frame and the animal segmentation mask overlaid where available. Without this flag, the script saves only the variance / VMR plots.
+
 Note: this plotting script currently runs on a hard-coded subset of sites listed near the top of the file. Edit the `SITES` list there if you want to process more or fewer sites.
 
 **Animal distance result plots (for paper figures):**
