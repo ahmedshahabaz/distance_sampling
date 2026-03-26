@@ -29,7 +29,12 @@ __pycache__/
 .DS_Store
 
 # large generated audit outputs
-other_MODELS/DistanceEstimationTracking_AUDIT/temp/
 *.npy
 *.pfm
 other_MODELS/DistanceEstimationTracking_AUDIT/temp/**/*.png
+
+other_MODELS/DistanceEstimationTracking_AUDIT/temp/**
+!other_MODELS/DistanceEstimationTracking_AUDIT/temp/**/
+!other_MODELS/DistanceEstimationTracking_AUDIT/temp/**/.gitkeep
+
+
