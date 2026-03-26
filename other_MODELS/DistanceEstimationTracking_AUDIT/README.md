@@ -19,8 +19,8 @@ Use this folder when you want AUDIT-based comparison results for the animal-dist
 
 The output Excel files are intended to be compared with the main project output from `eval_animal_distances.py`. In particular, `animal_dist_plots.py` expects AUDIT result files named like:
 
-- `animal_dist_rslt_AUDIT_DA.xlsx`
-- `animal_dist_rslt_AUDIT_DPT.xlsx`
+* `animal_dist_rslt_AUDIT_DA.xlsx`
+* `animal_dist_rslt_AUDIT_DPT.xlsx`
 
 ## Important Inputs
 
@@ -32,14 +32,16 @@ cd other_MODELS/DistanceEstimationTracking_AUDIT
 
 The script expects these inputs:
 
-- `./data/`
+* `./data/`
   Place the animal images here.
-- `./inference_test/Animal_Distances.xlsx`
+* `./inference_test/Animal_Distances.xlsx`
   This is the ground-truth table used to build the final AUDIT result sheet.
-- `./align_weights.pth`
+* `./align_weights.pth`
   AUDIT alignment weights.
-- `./DPT/weights/dpt_large-midas-2f21e586.pt`
+* `./DPT/weights/dpt_large-midas-2f21e586.pt`
   Needed when running in `DPT` mode.
+* `./temp/DA_raw/` and `./temp/DPT_raw/`
+  These folders are not included in this repository because their contents were too large to upload to GitHub. Download them from [this Box link](https://usf.box.com/s/93nb65iuv8fup0c721mu7qtp2snb1iqo).
 
 ## Input Image Naming
 
@@ -53,8 +55,8 @@ DSCF0009_40KL.JPG
 
 Important:
 
-- keep the site code in the filename
-- use the `.JPG` extension in uppercase, because the script currently looks for `*.JPG`
+* keep the site code in the filename
+* use the `.JPG` extension in uppercase, because the script currently looks for `*.JPG`
 
 ## Running The Script
 
@@ -69,6 +71,8 @@ In this mode, the script can generate raw DPT depth files itself if they are not
 ```text
 ./temp/DPT_raw/
 ```
+
+If you want to use the precomputed raw DPT files instead, download them from [this Box link](https://usf.box.com/s/93nb65iuv8fup0c721mu7qtp2snb1iqo) and place them in `./temp/DPT_raw/`.
 
 It then aligns them and writes aligned outputs to:
 
@@ -88,7 +92,9 @@ In this mode, the script expects raw Depth Anything predictions to already exist
 ./temp/DA_raw/
 ```
 
-These files are `.npy` depth arrays, one per image. The script then aligns them and writes aligned outputs to:
+These files are `.npy` depth arrays, one per image. Because this folder was too large to upload to GitHub, download it from [this Box link](https://usf.box.com/s/93nb65iuv8fup0c721mu7qtp2snb1iqo) and place it in `./temp/DA_raw/`.
+
+The script then aligns them and writes aligned outputs to:
 
 ```text
 ./inference_test/algn_out_DA/
@@ -98,27 +104,28 @@ These files are `.npy` depth arrays, one per image. The script then aligns them 
 
 After running, the main outputs are:
 
-- `./inference_test/animal_dist_rslt_AUDIT_DPT.xlsx`
-- `./inference_test/animal_dist_rslt_AUDIT_DA.xlsx`
+* `./inference_test/animal_dist_rslt_AUDIT_DPT.xlsx`
+* `./inference_test/animal_dist_rslt_AUDIT_DA.xlsx`
 
 These spreadsheets contain:
 
-- `Site`
-- `file_name`
-- `Mask Dist`
-- `GT Dist`
-- `diff_err`
-- `abs_err`
-- `abs_rel`
+* `Site`
+* `file_name`
+* `Mask Dist`
+* `GT Dist`
+* `diff_err`
+* `abs_err`
+* `abs_rel`
 
 The script also creates intermediate files in:
 
-- `./temp/`
-- `./inference_test/algn_out_DPT/`
-- `./inference_test/algn_out_DA/`
+* `./temp/`
+* `./inference_test/algn_out_DPT/`
+* `./inference_test/algn_out_DA/`
 
 ## Practical Notes
 
-- This script is for still-image animal-distance evaluation, not the reference-point video evaluation.
-- If an image is present in `./data/` but not represented correctly in `Animal_Distances.xlsx`, it will not be matched properly in the final report.
-- If you want to compare AUDIT with the main method in this repository, copy the final Excel outputs to the location expected by `animal_dist_plots.py`.
+* This script is for still-image animal-distance evaluation, not the reference-point video evaluation.
+* If an image is present in `./data/` but not represented correctly in `Animal_Distances.xlsx`, it will not be matched properly in the final report.
+* If you want to compare AUDIT with the main method in this repository, copy the final Excel outputs to the location expected by `animal_dist_plots.py`.
+
