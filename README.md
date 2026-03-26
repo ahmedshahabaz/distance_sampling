@@ -177,11 +177,6 @@ Note: this plotting script currently runs on a hard-coded subset of sites listed
 python animal_dist_plots.py
 ```
 
-**Depth vs. Z geometry illustration:**
-```bash
-python depth_vs_Z.py
-```
-
 ---
 
 ### Benchmark Evaluation (KITTI / NYU)
