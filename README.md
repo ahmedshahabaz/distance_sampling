@@ -29,22 +29,25 @@ Unless noted otherwise, run the commands below from the project root (`distance_
 distance_sampling/
 │
 ├── DATA/
-│   ├── VIDEOS/               # Site subdirectories with .AVI video files
+│   ├── VIDEOS/                         # Site subdirectories with .AVI video files
 │   │   ├── 31KL/
 │   │   ├── 33LD/
 │   │   └── ...
-│   ├── animal_dist_imgs/     # Still images for animal distance estimation
-│   ├── Animal_Distances.xlsx # Ground-truth animal distances
-│   └── ideal_calibration_results.json
+│   ├── animal_dist_imgs/               # Still images for animal distance estimation
+│   ├── Animal_Distances.xlsx           # Ground-truth animal distances
+│   ├── ideal_calibration_results.json  # Precomputed per-site scale and shift from a hand-selected "ideal" frame
+│   │                                   # where all reference points are visible; used as a fallback
+│   │                                   # when fewer than two reference points are visible in a frame
+│   └── reference_point_distance.json   # Ground-truth distances for annotated reference points used in calibration
 │
 ├── outputs/
 │   └── depth_preds/
-│       ├── rltv_depths/      # Relative depth predictions (.npy per video)
-│       └── metric_depths/    # Metric depth predictions (.npy per video)
+│       ├── rltv_depths/                # Relative depth predictions (.npy per video)
+│       └── metric_depths/              # Metric depth predictions (.npy per video)
 │
-├── checkpoints/              # Model weight files
-├── depth_anything_v2/        # Depth Anything V2 model architecture
-├── other_MODELS/             # Third-party model code (MiDaS, ZoeDepth, etc.)
+├── checkpoints/                        # Model weight files
+├── depth_anything_v2/                  # Depth Anything V2 model architecture
+├── other_MODELS/                       # Third-party model code (MiDaS, ZoeDepth, etc.)
 │   ├── AdaBins/
 │   ├── DA_metric/
 │   ├── DistanceEstimationTracking_AUDIT/
@@ -52,7 +55,7 @@ distance_sampling/
 │   ├── UniDepth/
 │   ├── UniK3D/
 │   └── ZoeDepth/
-└── utils/                    # Shared utilities
+└── utils/                              # Shared utilities
 ```
 
 ---
@@ -251,13 +254,13 @@ If you use this code, please cite:
 
 ## Data Availability
 
-Due to ongoing ecological research projects and conservation considerations, the full camera-trap video dataset cannot be made publicly available. A small subset of example videos used to demonstrate the pipeline is provided in this repository. Additional data may be made available from the authors upon reasonable request.
+Due to ongoing ecological research projects and conservation considerations, the full camera-trap video dataset cannot be made publicly available. A small subset of example videos used to demonstrate the pipeline is provided in this repository. Additional data may be made available from the authors upon request.
 
 ---
 
 ## Acknowledgements
 
-This research was supported in part by the US National Science Foundation grant IIS 1956050. The field research was funded by SAVE – Wildlife Conservation Fund.
+This research was supported in part by the US National Science Foundation grant IIS 1956050. The field research was funded by SAVE – Wildlife Conservation Fund, Poland.
 
 ---
 
