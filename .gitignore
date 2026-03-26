@@ -23,6 +23,7 @@ __pycache__/
 # Model weights
 *.pt
 *.pth
+!other_MODELS/DistanceEstimationTracking_AUDIT/weights/align_weights.pth
 
 # Common local clutter
 .ipynb_checkpoints/
